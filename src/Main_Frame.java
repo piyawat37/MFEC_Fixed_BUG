@@ -2,6 +2,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Date;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -164,16 +165,24 @@ public class Main_Frame extends JPanel implements ActionListener {
 											if(hourInTime < 8 || hourInTime == 8 && minInTime < 06){
 												if(outTime>1050){
 													otTime = outTime - 1050; //1050 = 17.30 Start OT
-													WageOT = (Double.parseDouble(CalculateWageOT(otTime))*2) + Double.parseDouble(CalculateWageNormal(timeWorkedOutIn));
+													WageOT = (Double.parseDouble(CalculateWageOT(otTime))*2) + (Double.parseDouble(CalculateWageNormal(timeWorkedOutIn))*1.5);
 													logData.append("Wage: "+WageOT+" (OT) (Holiday) "+newline);
 												}else{
 													logData.append("Wage: "+Double.parseDouble(CalculateWageNormal(timeWorkedOutIn))*1.5+ " (Holiday) " +newline);
 												}
 											}else if(hourInTime > 17 && minInTime > 30){
 												logData.append("Wage: "+Double.parseDouble(CalculateWageNormal(timeWorkedOutIn))*2+ " (Holiday) " +newline);												
-											}else {
+											}else if(inTime>485){
 												//Late Holiday
-												logData.append("Wage: "+Double.parseDouble(CalculateWageNormal(timeWorkedOutIn))*1.5+ " (Holiday) " +newline);
+												if(outTime>1050){
+													otTime = outTime - 1050; //1050 = 17.30 Start OT
+													WageOT = (Double.parseDouble(CalculateWageOT(otTime))*2) + (Double.parseDouble(CalculateWageNormal(timeWorkedOutIn))*1.5)
+																-Double.parseDouble(Calculate_Late(inTime-485)) ;
+													logData.append("Wage: "+WageOT+" (OT) (Holiday Late) "+newline);
+												}else{
+													logData.append("Wage: "+((Double.parseDouble(CalculateWageNormal(timeWorkedOutIn))*1.5)-Double.parseDouble(Calculate_Late(inTime-485)))
+															+ " (Holiday Late) " +newline);
+												}
 											}
 										}else { //Worked Day
 											if(hourInTime < 8 || hourInTime == 8 && minInTime < 06){
@@ -186,8 +195,17 @@ public class Main_Frame extends JPanel implements ActionListener {
 												}
 											}else if(hourInTime > 17 && minInTime > 30){
 												logData.append("Wage: "+Double.parseDouble(CalculateWageNormal(timeWorkedOutIn))*1.5+newline);												
-											}else {
-												logData.append("Wage: "+Double.parseDouble(CalculateWageNormal(timeWorkedOutIn))+newline);
+											}else if(inTime>485){
+												//Late Worked Day
+												if(outTime>1050){
+													otTime = outTime - 1050; //1050 = 17.30 Start OT
+													WageOT = (Double.parseDouble(CalculateWageOT(otTime))*1.5) + Double.parseDouble(CalculateWageNormal(timeWorkedOutIn))
+																-Double.parseDouble(Calculate_Late(inTime-485)) ;
+													logData.append("Wage: "+WageOT+" (OT) (Worked Day Late) "+newline);
+												}else{
+													logData.append("Wage: "+((Double.parseDouble(CalculateWageNormal(timeWorkedOutIn)))-Double.parseDouble(Calculate_Late(inTime-485)))
+															+ " (Holiday Late) " +newline);
+												}
 											}
 										}
 									}else if(outTime<inTime){ //Evening - Morning
@@ -231,6 +249,7 @@ public class Main_Frame extends JPanel implements ActionListener {
             }
 		}
 	}
+	/*
 	public static boolean CheckHoliday(String date){
 		String daySplit[];
 		int dayOfWeek;
@@ -248,6 +267,22 @@ public class Main_Frame extends JPanel implements ActionListener {
 	    	}
 	    	c.add(Calendar.DATE,  1);
 	    }
+		return false;
+	}*/
+	public static boolean CheckHoliday(String date){
+		SimpleDateFormat format = new SimpleDateFormat("d/M/yyyy");
+		try{
+			Date d = format.parse(date);
+			Calendar c = Calendar.getInstance();
+			c.setTime(d);
+			int dayOfWeek = c.get(Calendar.DAY_OF_WEEK);
+			if(Calendar.SUNDAY == dayOfWeek || Calendar.SATURDAY == dayOfWeek){
+				return true;
+			}
+		}catch (Exception e) {
+			// TODO: handle exception
+		}
+		
 		return false;
 	}
 	public static String CalculateWageNormal(int timework){
@@ -268,5 +303,12 @@ public class Main_Frame extends JPanel implements ActionListener {
 		calWage = timeworkOT * moneyMin;
 		wage = Decf.format(calWage);
 		return wage;
+	}
+	public static String Calculate_Late(int timelate){
+		String diswage = null;
+		double calDisWage;
+		calDisWage = timelate*moneyMin;
+		diswage = Decf.format(calDisWage);
+		return diswage;
 	}
 }
